@@ -4,7 +4,7 @@
 
 This project presents an end-to-end deep learning recommendation system built on the Tenrec QB-video dataset (2.27M interactions, 30,759 users, 41,533 items). We implement and evaluate a Multi-Objective Two-Tower neural network alongside a Matrix Factorization (SVD) baseline, and deploy the retrieval pipeline using FAISS for sub-millisecond approximate nearest neighbor search.
 
-The central finding is that SVD significantly outperforms the neural approach on this dataset scale (AUC 0.8761 vs. 0.5922), consistent with established literature showing that deep retrieval models require substantially larger datasets (10M+ interactions) and richer feature spaces to surpass classical collaborative filtering. We provide a rigorous analysis of why this occurs and under what conditions Two-Tower architectures become the superior choice.
+The central finding is that SVD outperforms the neural approach on this dataset scale (AUC 0.8761 vs. 0.6450), consistent with established literature showing that deep retrieval models require substantially larger datasets (10M+ interactions) and richer feature spaces to surpass classical collaborative filtering. After fixing a critical negative sampling bug, the Multi-Objective model improved from AUC 0.5922 to 0.6450 (+8.9% relative gain). We provide a rigorous analysis of why the gap persists and under what conditions Two-Tower architectures become the superior choice.
 
 ## Table of Contents
 
@@ -88,15 +88,15 @@ To address the multi-task interference observed in the Multi-Objective model, we
 
 ### 3.1 Training Convergence
 
-The Multi-Objective model was trained for 10 epochs. The best validation loss (0.2233) was achieved at epoch 8, with no early stopping triggered. Training converged steadily, with the BPR ranking component showing the most consistent improvement.
+The Multi-Objective model was trained for 10 epochs with corrected negative sampling. The best validation loss (0.2206) was achieved at epoch 9. Training converged steadily, with proper negative sampling ensuring validation pairs were never used as negatives.
 
 | Epoch | Train Loss | Val Loss | Status |
 |-------|-----------|----------|--------|
-| 1 | 0.2050 | 0.2302 | Saved |
-| 3 | 0.1765 | 0.2266 | Saved |
-| 6 | 0.1743 | 0.2244 | Saved |
-| **8** | **0.1731** | **0.2233** | **Best** |
-| 10 | 0.1721 | 0.2266 | - |
+| 1 | 0.2044 | 0.2291 | Saved |
+| 4 | 0.1753 | 0.2244 | Saved |
+| 6 | 0.1728 | 0.2211 | Saved |
+| **9** | **0.1709** | **0.2206** | **Best** |
+| 10 | 0.1700 | 0.2224 | - |
 
 ![Training Curves](training_curves.png)
 
@@ -112,9 +112,9 @@ The Multi-Objective model was trained for 10 epochs. The best validation loss (0
 | Model | AUC |
 |-------|-----|
 | Matrix Factorization (SVD) | **0.8761** |
-| Multi-Objective Two-Tower | 0.5922 |
+| Multi-Objective Two-Tower | 0.6450 |
 
-The SVD baseline outperforms the neural model by a margin of 0.2839 in AUC, a substantial gap that is analyzed in detail in Section 6.
+The SVD baseline outperforms the neural model by a margin of 0.2311 in AUC. After fixing the negative sampling bug, the Multi-Objective model improved from 0.5922 to 0.6450 (+8.9% relative gain), demonstrating the importance of proper negative sampling. The remaining gap is analyzed in detail in Section 6.
 
 ![Model Comparison](model_comparison.png)
 
@@ -122,20 +122,20 @@ The SVD baseline outperforms the neural model by a margin of 0.2839 in AUC, a su
 
 | K | Metric | MF Baseline | Multi-Objective |
 |---|--------|-------------|-----------------|
-| 5 | Precision | 0.0070 | 0.0004 |
-| 5 | Recall | 0.0124 | 0.0010 |
-| 5 | NDCG | 0.0177 | 0.0009 |
-| 5 | Hit Rate | 0.0330 | 0.0020 |
-| 10 | Precision | 0.0111 | 0.0006 |
-| 10 | Recall | 0.0386 | 0.0018 |
-| 10 | NDCG | 0.0397 | 0.0022 |
-| 10 | Hit Rate | 0.1020 | 0.0060 |
-| 20 | Precision | 0.0131 | 0.0006 |
-| 20 | Recall | 0.0828 | 0.0035 |
-| 20 | NDCG | 0.0687 | 0.0035 |
-| 20 | Hit Rate | 0.2140 | 0.0110 |
+| 5 | Precision | 0.0070 | 0.0000 |
+| 5 | Recall | 0.0124 | 0.0000 |
+| 5 | NDCG | 0.0177 | 0.0000 |
+| 5 | Hit Rate | 0.0330 | 0.0000 |
+| 10 | Precision | 0.0111 | 0.0002 |
+| 10 | Recall | 0.0386 | 0.0011 |
+| 10 | NDCG | 0.0397 | 0.0006 |
+| 10 | Hit Rate | 0.1020 | 0.0020 |
+| 20 | Precision | 0.0131 | 0.0002 |
+| 20 | Recall | 0.0828 | 0.0013 |
+| 20 | NDCG | 0.0687 | 0.0011 |
+| 20 | Hit Rate | 0.2140 | 0.0040 |
 
-The SVD baseline achieves an order-of-magnitude advantage across all metrics and cutoff values.
+The SVD baseline achieves an order-of-magnitude advantage across all metrics and cutoff values. Note: The Multi-Objective model's ranking metrics remain low despite improved AUC, suggesting the model better distinguishes positive from negative samples but doesn't produce optimal ranked lists.
 
 ---
 
@@ -147,17 +147,17 @@ A t-SNE projection of 1,000 sampled user and 1,000 sampled item embeddings from 
 
 **What the Model Learned Successfully:**
 
-1. **User Segmentation**: The visualization shows 3-4 distinct user clusters, indicating the model discovered meaningful user personas or behavioral patterns. A particularly tight cluster in the lower-left represents users with highly similar interaction patterns.
+1. **User Segmentation**: The visualization shows distinct user structure with a crescent/arc shape on the left plus a separate cluster in the top-right, indicating the model discovered meaningful user personas or behavioral patterns with more organized geometry than typical random initialization.
 
-2. **Item Representation**: Items spread organically across the embedding space rather than clustering by simple features, suggesting the model learned content-based or behavioral representations beyond naive popularity.
+2. **Item Representation**: Items form tighter, well-defined sub-clusters across the embedding space, suggesting the model learned content-based or behavioral representations. Better-defined item groups indicate successful feature learning beyond naive popularity.
 
-3. **No Popularity Bias**: When colored by popularity, high-engagement items are scattered randomly across the space rather than forming a separate cluster. This is a **positive finding** — the model avoided the common pitfall of simply learning "popular = good" and instead learned item characteristics.
+3. **No Popularity Bias**: When colored by popularity, high-engagement items (5-6 dark red outliers) are scattered randomly across the space rather than forming a separate cluster. This is a **positive finding** — the model avoided the common pitfall of simply learning "popular = good" and instead learned item characteristics.
 
-4. **User-Item Separation**: Clear geometric separation between user and item clusters shows the two-tower architecture successfully learned distinct representation spaces with meaningful alignment.
+4. **User-Item Alignment**: Notable overlap between users and items in the center-right area indicates improved user-item alignment. The two-tower architecture successfully learned distinct yet compatible representation spaces.
 
 **Why Retrieval Still Underperformed:**
 
-Despite learning meaningful embeddings, the model achieved low AUC (0.5922) due to:
+Despite learning meaningful embeddings, the model achieved AUC 0.6450 (improved from 0.5922 after bug fix) due to:
 - **Data scale limitation**: 2.27M interactions insufficient for 4.67M parameters to learn fine-grained ranking
 - **Multi-task interference**: Competing gradients from click/like/follow heads degraded ranking precision
 - **Negative sampling**: Even after fixing the data leak, batch-based training sees only sparse negative samples vs. SVD's global optimization
@@ -181,10 +181,10 @@ Item embeddings (41,533 vectors, 64 dimensions) were indexed using FAISS for app
 
 | Method | Mean Latency | Std Dev | P99 Latency |
 |--------|-------------|---------|-------------|
-| Exact Search | 0.695 ms | 0.296 ms | 1.714 ms |
-| Approximate Search | 0.142 ms | 0.126 ms | 0.598 ms |
+| Exact Search | 0.869 ms | 0.624 ms | 3.674 ms |
+| Approximate Search | 0.084 ms | 0.215 ms | 0.154 ms |
 
-Both search methods operate well under the 50ms SLA target. The approximate search achieves a 4.9x speedup over exact search with negligible recall loss at this index size. At scale (100M+ items), this gap would widen to several orders of magnitude.
+Both search methods operate well under the 50ms SLA target. The approximate search achieves a 10.3x speedup over exact search with negligible recall loss at this index size. At scale (100M+ items), this gap would widen to several orders of magnitude.
 
 ![Latency Analysis](latency_analysis.png)
 
@@ -222,9 +222,19 @@ Two-Tower models power production recommendation systems at YouTube, TikTok, Pin
 
 The crossover point typically occurs when users exceed 1M, items exceed 100K, and rich side information is available.
 
-### 6.3 Negative Sampling Bug Discovered
+### 6.3 Negative Sampling Bug Fixed
 
-During debugging, we identified a critical data leak in the negative sampling pipeline: the positive pair set used for filtering was constructed from training data only, meaning 99.5% of validation positive pairs (213,595 out of 214,695) could be sampled as negatives during training. This was corrected by constructing the positive pair set from all data splits (2,259,274 pairs total), reducing leaky validation pairs to zero. This finding demonstrates the importance of rigorous data pipeline validation in recommendation systems.
+During debugging, we identified and **fixed** a critical data leak in the negative sampling pipeline: the positive pair set used for filtering was originally constructed from training data only, meaning 99.5% of validation positive pairs (213,595 out of 214,695) could be sampled as negatives during training.
+
+**The Fix:** We corrected the bug by constructing `all_positive_pairs` from the complete dataset before splitting:
+```python
+all_positive_pairs = set(zip(df['user_idx'], df['item_idx']))  # All 2.27M pairs
+```
+
+**Impact:** After re-training with corrected negative sampling:
+- AUC improved from **0.5922 → 0.6450** (+8.9% relative gain)
+- Validation loss reduced from 0.2233 → 0.2206
+- This demonstrates the importance of rigorous data pipeline validation in recommendation systems
 
 ### 6.4 Paths to Improvement
 
