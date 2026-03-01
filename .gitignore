@@ -29,11 +29,6 @@ __pycache__/
 *.npy
 *.npz
 
-# Generated images
-*.png
-*.jpg
-*.jpeg
-
 # Dataset folder (too large)
 Tenrec/
 data/
