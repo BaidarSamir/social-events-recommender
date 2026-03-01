@@ -138,10 +138,6 @@ A t-SNE projection of 1,000 sampled user and 1,000 sampled item embeddings from 
 
 ![Embedding Space Visualization](embedding_space_visualization.png)
 
-We also examined sample recommendations for three users with varying activity levels (low: 2 interactions, medium: 61 interactions, high: 247 interactions). The model shows zero hit rate across all users, confirming the ranking issues observed in the embedding space.
-
-![Sample Recommendations](sample_recommendations.png)
-
 This observation is consistent with the low AUC and confirms that the multi-task training objective interfered with learning a meaningful ranking geometry.
 
 ---
