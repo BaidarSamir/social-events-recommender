@@ -98,6 +98,8 @@ The Multi-Objective model was trained for 10 epochs. The best validation loss (0
 | **8** | **0.1731** | **0.2233** | **Best** |
 | 10 | 0.1721 | 0.2266 | - |
 
+![Training Curves](training_curves.png)
+
 ### 3.2 AUC Comparison
 
 | Model | AUC |
@@ -106,6 +108,8 @@ The Multi-Objective model was trained for 10 epochs. The best validation loss (0
 | Multi-Objective Two-Tower | 0.5922 |
 
 The SVD baseline outperforms the neural model by a margin of 0.2839 in AUC, a substantial gap that is analyzed in detail in Section 6.
+
+![Model Comparison](model_comparison.png)
 
 ### 3.3 Retrieval Quality Metrics
 
@@ -132,6 +136,12 @@ The SVD baseline achieves an order-of-magnitude advantage across all metrics and
 
 A t-SNE projection of 1,000 sampled user and 1,000 sampled item embeddings from the Multi-Objective model reveals clear separation between user and item clusters in the learned embedding space. However, item embeddings colored by popularity show that high-popularity and low-popularity items are not well separated, and the nearly uniform similarity scores (~0.99) for top-K retrieved items indicate that the model's embedding space lacks sufficient discriminative power to rank items effectively.
 
+![Embedding Space Visualization](embedding_space_visualization.png)
+
+We also examined sample recommendations for three users with varying activity levels (low: 2 interactions, medium: 61 interactions, high: 247 interactions). The model shows zero hit rate across all users, confirming the ranking issues observed in the embedding space.
+
+![Sample Recommendations](sample_recommendations.png)
+
 This observation is consistent with the low AUC and confirms that the multi-task training objective interfered with learning a meaningful ranking geometry.
 
 ---
@@ -155,6 +165,8 @@ Item embeddings (41,533 vectors, 64 dimensions) were indexed using FAISS for app
 | Approximate Search | 0.142 ms | 0.126 ms | 0.598 ms |
 
 Both search methods operate well under the 50ms SLA target. The approximate search achieves a 4.9x speedup over exact search with negligible recall loss at this index size. At scale (100M+ items), this gap would widen to several orders of magnitude.
+
+![Latency Analysis](latency_analysis.png)
 
 ### 5.3 Memory Footprint
 
