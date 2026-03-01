@@ -1,0 +1,58 @@
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# Model files (too large for GitHub)
+*.pt
+*.pth
+*.h5
+*.ckpt
+
+# Pickle files (binary data)
+*.pkl
+*.pickle
+
+# NumPy arrays (large binary files)
+*.npy
+*.npz
+
+# Generated images
+*.png
+*.jpg
+*.jpeg
+
+# Dataset folder (too large)
+Tenrec/
+data/
+datasets/
+
+# IDE settings
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
